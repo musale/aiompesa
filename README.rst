@@ -1,20 +1,24 @@
-# aiompesa
+aiompesa
+========
+| A thin async wrapper of MPESA daraja API.
 
-A thin async wrapper of MPESA daraja API.
-
-## Requirements
-
+Requirements
+------------
 - Python 3.6+
 
-## Installation
+Installation
+------------
+``$ pip install aiompesa``
 
-`$ pip install aiompesa`
-
-## Motivation
-
+Motivation
+----------
 - To learn a little more about `asyncio` and put it to some practise.
 - To develop an async wrapper for the [Safaricom daraja api](https://developers.safaricom.co.ke)
 
-## Contribution
-
+Contribution
+------------
 Follow the [contribution guidelines](https://#)
+
+Documentation
+
+

@@ -9,6 +9,8 @@ twine = "*"
 pytest = "*"
 "flake8" = "*"
 bandit = "*"
+sphinx = "*"
+sphinx-rtd-theme = "*"
 
 [packages]
 aiohttp = "*"
