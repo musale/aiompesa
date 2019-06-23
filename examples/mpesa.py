@@ -7,9 +7,7 @@ CONSUMER_SECRET = "biIImmaAX9dYD4Pw"
 SHORT_CODE_1 = "601376"
 SHORT_CODE_2 = "600000"
 LIPA_NA_MPESA = "174379"
-LIPA_NA_MPESA_KEY = (
-    "bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919"
-)
+LIPA_NA_MPESA_KEY = "bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919"
 SEC_CREDENTIAL = (
     "fqW2kW0hNOoeSbh+sd0qrSfFwAHJcxy1VlCqPGuu2MtRYPITI35CQApGPg"
     "2mE8d9SMmvXSB/hTeyV6apg3sJyqSfe4HK0p1UelW1wVpER2yctyI+"
@@ -51,9 +49,7 @@ if __name__ == "__main__":
 
     print("--- MPESA c2b running ---")
     c2b = loop.run_until_complete(
-        mpesa.c2b(
-            amount=100, shortcode=SHORT_CODE_1, phone_number="0705867162"
-        )
+        mpesa.c2b(amount=100, shortcode=SHORT_CODE_1, phone_number="0705867162")
     )
     print(c2b)
     print("--- MPESA c2b done running---")
@@ -112,3 +108,21 @@ if __name__ == "__main__":
     )
     print(stk)
     print("--- MPESA stk done running ---")
+
+    print("--- MPESA reversal running ---")
+    transaction_id = "AG_20190623_0000659f5c6b1e2dcb74"
+    rev = loop.run_until_complete(
+        mpesa.reversal(
+            initiator=INITIATOR_NAME,
+            security_credential=sec_cred,
+            transaction_id=transaction_id,
+            amount=100,
+            receiver_party=SHORT_CODE_2,
+            result_url="https://aio.co.ke/result",
+            queue_timeout_url="https://aio.co.ke/queue",
+            remarks=f"Wrongly input amount",
+            occasion="Work",
+        )
+    )
+    print(rev)
+    print("--- MPESA reversal done running ---")

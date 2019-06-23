@@ -21,6 +21,7 @@ class Mpesa:
     B2C_URL_PATH = "/mpesa/b2c/v1/paymentrequest"
     B2B_URL_PATH = "/mpesa/b2b/v1/paymentrequest"
     STK_URL_PATH = "/mpesa/stkpush/v1/processrequest"
+    REVERSAL_URL_PATH = "/mpesa/reversal/v1/request"
 
     def __init__(
         self,
@@ -45,15 +46,10 @@ class Mpesa:
                 response_txt = await response.text()
                 if response_txt:
                     return response_txt
-                return {
-                    "error": "Wrong credentials",
-                    "status": response.status,
-                }
+                return {"error": "Wrong credentials", "status": response.status}
 
     @staticmethod
-    async def post(
-        session: aiohttp.ClientSession, url: str, data: dict
-    ) -> dict:
+    async def post(session: aiohttp.ClientSession, url: str, data: dict) -> dict:
         async with session.post(url, json=data) as response:
             try:
                 return await response.json()
@@ -76,10 +72,7 @@ class Mpesa:
 
     async def get_headers(self) -> dict:
         """Get the headers for an MPESA request."""
-        headers = {
-            "Host": f"{self.base_url[8:]}",
-            "Content-Type": "application/json",
-        }
+        headers = {"Host": f"{self.base_url[8:]}", "Content-Type": "application/json"}
         token = await self.generate_token()
         access_token = token.get("access_token", None)
         if access_token is None:
@@ -96,9 +89,7 @@ class Mpesa:
         validation_url: str,
     ) -> dict:
         if response_type not in ["Cancelled", "Completed"]:
-            raise ValueError(
-                f"{response_type} is not a valid ResponseType value"
-            )
+            raise ValueError(f"{response_type} is not a valid ResponseType value")
         if not is_url(confirmation_url):
             raise ValueError(f"{confirmation_url} is not a valid url value")
         if not is_url(validation_url):
@@ -117,10 +108,7 @@ class Mpesa:
             return await self.post(session=session, url=url, data=data)
 
     async def c2b(
-        self,
-        shortcode: str = None,
-        amount: int = None,
-        phone_number: str = None,
+        self, shortcode: str = None, amount: int = None, phone_number: str = None
     ) -> dict:
         """Simulate making payments from client to Safaricom API."""
         url = f"{self.base_url}{self.C2B_URL_PATH}"
@@ -179,11 +167,7 @@ class Mpesa:
         phone_number, valid = saf_number_fmt(party_b)
         if not valid:
             raise ValueError(f"{party_b} is not a valid Safaricom number")
-        if command_id not in [
-            "SalaryPayment",
-            "BusinessPayment",
-            "PromotionPayment",
-        ]:
+        if command_id not in ["SalaryPayment", "BusinessPayment", "PromotionPayment"]:
             raise ValueError(f"{command_id} is not a valid CommandID value")
         data = {
             "InitiatorName": initiator_name,
@@ -287,6 +271,38 @@ class Mpesa:
             "CallBackURL": callback_url,
             "AccountReference": number,
             "TransactionDesc": transaction_desc,
+        }
+        headers = await self.get_headers()
+
+        async with aiohttp.ClientSession(headers=headers) as session:
+            return await self.post(session=session, url=url, data=data)
+
+    async def reversal(
+        self,
+        initiator: str = None,
+        security_credential: str = None,
+        transaction_id: str = None,
+        amount: int = None,
+        receiver_party: str = None,
+        result_url: str = None,
+        queue_timeout_url: str = None,
+        remarks: str = None,
+        occasion: str = None,
+    ) -> dict:
+        """Make a reversal of a transaction."""
+        url = f"{self.base_url}{self.REVERSAL_URL_PATH}"
+        data = {
+            "Initiator": initiator,
+            "SecurityCredential": security_credential,
+            "CommandID": "TransactionReversal",
+            "TransactionID": transaction_id,
+            "Amount": f"{amount}",
+            "ReceiverParty": receiver_party,
+            "RecieverIdentifierType": "4",
+            "ResultURL": result_url,
+            "QueueTimeOutURL": queue_timeout_url,
+            "Remarks": remarks,
+            "Occasion": occasion,
         }
         headers = await self.get_headers()
 
