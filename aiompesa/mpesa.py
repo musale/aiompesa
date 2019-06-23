@@ -1,5 +1,10 @@
-import aiohttp
 import logging
+from base64 import b64encode
+from pathlib import Path
+
+import aiohttp
+from M2Crypto import RSA, X509
+
 from aiompesa.utils import is_url, saf_number_fmt
 
 logger = logging.getLogger(__name__)
@@ -11,6 +16,7 @@ class Mpesa:
     GENERATE_TOKEN_PATH = "/oauth/v1/generate?grant_type=client_credentials"
     REGISTER_URL_PATH = "/mpesa/c2b/v1/registerurl"
     C2B_URL_PATH = "/mpesa/c2b/v1/simulate"
+    B2C_URL_PATH = "/mpesa/b2c/v1/paymentrequest"
 
     def __init__(
         self,
@@ -64,7 +70,7 @@ class Mpesa:
                 return {"access_token": None, "expires_in": None}
             return response
 
-    async def get_headers(self):
+    async def get_headers(self) -> dict:
         """Get the headers for an MPESA request."""
         headers = {
             "Host": f"{self.base_url[8:]}",
@@ -112,7 +118,7 @@ class Mpesa:
         amount: int = None,
         phone_number: str = None,
     ) -> dict:
-        """Make payments from clients to Safaricom API."""
+        """Simulate making payments from client to Safaricom API."""
         url = f"{self.base_url}{self.C2B_URL_PATH}"
         number, valid = saf_number_fmt(phone_number)
         if not valid:
@@ -125,7 +131,62 @@ class Mpesa:
             "Msisdn": number,
             "BillRefNumber": number,
         }
-        print(data)
+        headers = await self.get_headers()
+
+        async with aiohttp.ClientSession(headers=headers) as session:
+            return await self.post(session=session, url=url, data=data)
+
+    @staticmethod
+    def generate_security_credential(
+        cert_location: str, initiator_password: str
+    ) -> str:
+        """Encode into base64 string the initiator password with M-Pesa’s
+        public key and a X509 certificate."""
+        cert_path = Path(cert_location)
+        if cert_path.is_file() and cert_path.exists():
+            with cert_path.open(mode="rt") as f:
+                cert_data = f.read()
+
+            cert = X509.load_cert_string(cert_data)
+            pub_key = cert.get_pubkey()
+            rsa_key = pub_key.get_rsa()
+            cipher = rsa_key.public_encrypt(
+                initiator_password.encode(), RSA.pkcs1_padding
+            )
+            return b64encode(cipher)
+        else:
+            raise FileNotFoundError(cert_location)
+
+    async def b2c(
+        self,
+        initiator_name: str = None,
+        security_credential: str = None,
+        command_id: str = None,
+        amount: int = None,
+        party_a: str = None,
+        party_b: str = None,
+        remarks: str = None,
+        queue_timeout_url: str = None,
+        result_url: str = None,
+        occassion: str = "",
+    ) -> dict:
+        """Make a payment from MPESA to a client."""
+        url = f"{self.base_url}{self.B2C_URL_PATH}"
+        phone_number, valid = saf_number_fmt(party_b)
+        if not valid:
+            raise ValueError(f"{party_b} is not a valid Safaricom number")
+        data = {
+            "InitiatorName": initiator_name,
+            "SecurityCredential": security_credential,
+            "CommandID": command_id,
+            "Amount": f"{amount}",
+            "PartyA": party_a,
+            "PartyB": phone_number,
+            "Remarks": remarks,
+            "QueueTimeOutURL": queue_timeout_url,
+            "ResultURL": result_url,
+            "Occassion": occassion,
+        }
         headers = await self.get_headers()
 
         async with aiohttp.ClientSession(headers=headers) as session:

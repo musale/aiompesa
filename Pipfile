@@ -7,13 +7,13 @@ name = "pypi"
 black = "*"
 twine = "*"
 pytest = "*"
+"flake8" = "*"
+bandit = "*"
 
 [packages]
-black = "*"
-"flake8" = "*"
 aiohttp = "*"
 aiompesa = {path = ".", editable = true}
-bandit = "*"
+"m2crypto" = "*"
 
 [requires]
 python_version = "3.6"

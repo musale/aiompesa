@@ -1,9 +1,19 @@
 import asyncio
+
 from aiompesa import Mpesa
 
 CONSUMER_KEY = "nF4OwB2XiuYZwmdMz3bovnzw2qMls1b7"
 CONSUMER_SECRET = "biIImmaAX9dYD4Pw"
 SHORT_CODE_1 = "601376"
+SEC_CREDENTIAL = (
+    "fqW2kW0hNOoeSbh+sd0qrSfFwAHJcxy1VlCqPGuu2MtRYPITI35CQApGPg"
+    "2mE8d9SMmvXSB/hTeyV6apg3sJyqSfe4HK0p1UelW1wVpER2yctyI+"
+    "YMqgDUx+OK+Zu5dUACuXb9Cpf5FSCJ++yA/At0K8wDaBMlkaN4eAkZJpN"
+    "80z7VMHTtuWvecnrtazdzvxnA0+2jIt7vd8PJSVrFX9WBw/KV1SKZHjx35xn"
+    "Duv4EgQlgNk8MQwV4Er5ITvqQZmHSZpsUNjtaDrU6hGrhoDz0m3Y2y7THu7"
+    "EzHJMAvzRoh6oo7ktvwzDRQRNgT7PzlUG6/eUuaJJTBUayEj6EbKBw=="
+)
+INITIATOR_NAME = "apitest376"
 
 if __name__ == "__main__":
     loop = asyncio.get_event_loop()
@@ -42,3 +52,27 @@ if __name__ == "__main__":
     )
     print(c2b)
     print("--- MPESA c2b done running---")
+
+    print("--- Generate the initiator password ---")
+    sec_cred = mpesa.generate_security_credential(
+        cert_location="examples/cert.cer", initiator_password="whoas"
+    )
+    sec_cred = sec_cred.decode()
+    print("--- Done generating secret credentials ---")
+    print("--- MPESA b2c running ---")
+    party_b = "254705867162"
+    b2c = loop.run_until_complete(
+        mpesa.b2c(
+            initiator_name=INITIATOR_NAME,
+            security_credential=sec_cred,
+            command_id="BusinessPayment",
+            amount=100,
+            party_a=SHORT_CODE_1,
+            party_b=party_b,
+            remarks=f"Deposit to {party_b}",
+            queue_timeout_url="https://www.aio.co.ke/queue/",
+            result_url="https://www.aio.co.ke/result/",
+        )
+    )
+    print(b2c)
+    print("--- MPESA done running b2c ---")
