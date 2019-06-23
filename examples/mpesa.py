@@ -5,6 +5,7 @@ from aiompesa import Mpesa
 CONSUMER_KEY = "nF4OwB2XiuYZwmdMz3bovnzw2qMls1b7"
 CONSUMER_SECRET = "biIImmaAX9dYD4Pw"
 SHORT_CODE_1 = "601376"
+SHORT_CODE_2 = "600000"
 SEC_CREDENTIAL = (
     "fqW2kW0hNOoeSbh+sd0qrSfFwAHJcxy1VlCqPGuu2MtRYPITI35CQApGPg"
     "2mE8d9SMmvXSB/hTeyV6apg3sJyqSfe4HK0p1UelW1wVpER2yctyI+"
@@ -76,3 +77,19 @@ if __name__ == "__main__":
     )
     print(b2c)
     print("--- MPESA done running b2c ---")
+    print("--- MPESA b2b running ---")
+    b2b = loop.run_until_complete(
+        mpesa.b2b(
+            initiator_name=INITIATOR_NAME,
+            security_credential=sec_cred,
+            command_id="BusinessBuyGoods",
+            amount=100,
+            party_a=SHORT_CODE_1,
+            party_b=SHORT_CODE_2,
+            remarks=f"Deposit to {party_b}",
+            queue_timeout_url="https://www.aio.co.ke/queue/",
+            result_url="https://www.aio.co.ke/result/",
+        )
+    )
+    print(b2b)
+    print("--- MPESA b2b done running ---")

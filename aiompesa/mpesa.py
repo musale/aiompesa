@@ -17,6 +17,7 @@ class Mpesa:
     REGISTER_URL_PATH = "/mpesa/c2b/v1/registerurl"
     C2B_URL_PATH = "/mpesa/c2b/v1/simulate"
     B2C_URL_PATH = "/mpesa/b2c/v1/paymentrequest"
+    B2B_URL_PATH = "/mpesa/b2b/v1/paymentrequest"
 
     def __init__(
         self,
@@ -175,6 +176,12 @@ class Mpesa:
         phone_number, valid = saf_number_fmt(party_b)
         if not valid:
             raise ValueError(f"{party_b} is not a valid Safaricom number")
+        if command_id not in [
+            "SalaryPayment",
+            "BusinessPayment",
+            "PromotionPayment",
+        ]:
+            raise ValueError(f"{command_id} is not a valid CommandID value")
         data = {
             "InitiatorName": initiator_name,
             "SecurityCredential": security_credential,
@@ -186,6 +193,48 @@ class Mpesa:
             "QueueTimeOutURL": queue_timeout_url,
             "ResultURL": result_url,
             "Occassion": occassion,
+        }
+        headers = await self.get_headers()
+
+        async with aiohttp.ClientSession(headers=headers) as session:
+            return await self.post(session=session, url=url, data=data)
+
+    async def b2b(
+        self,
+        initiator_name: str = None,
+        security_credential: str = None,
+        command_id: str = None,
+        amount: int = None,
+        party_a: str = None,
+        party_b: str = None,
+        remarks: str = None,
+        queue_timeout_url: str = None,
+        result_url: str = None,
+    ) -> dict:
+        url = f"{self.base_url}{self.B2B_URL_PATH}"
+        if command_id not in [
+            "BusinessPayBill",
+            "BusinessBuyGoods",
+            "DisburseFundsToBusiness",
+            "BusinessToBusinessTransfer",
+            "MerchantToMerchantTransfer.",
+        ]:
+            raise ValueError(
+                f"{command_id} is not a valid CommandID value for b2b request"
+            )
+
+        data = {
+            "Initiator": initiator_name,
+            "SecurityCredential": security_credential,
+            "CommandID": command_id,
+            "SenderIdentifierType": "4",
+            "RecieverIdentifierType": "4",
+            "Amount": f"{amount}",
+            "PartyA": party_a,
+            "PartyB": party_b,
+            "Remarks": remarks,
+            "QueueTimeOutURL": queue_timeout_url,
+            "ResultURL": result_url,
         }
         headers = await self.get_headers()
 
