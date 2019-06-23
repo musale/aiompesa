@@ -7,7 +7,7 @@ upload:
 	@sudo rm -rf aiompesa.egg-info
 	@python setup.py sdist
 	@python setup.py bdist_wheel
-	@twine upload dist/*
+	@pipenv run twine upload -u ${TWINE_USERNAME} -p ${TWINE_PASSWORD} dist/*
 
 .PHONY: tests
 tests:
