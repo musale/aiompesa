@@ -7,7 +7,9 @@ CONSUMER_SECRET = "biIImmaAX9dYD4Pw"
 SHORT_CODE_1 = "601376"
 SHORT_CODE_2 = "600000"
 LIPA_NA_MPESA = "174379"
-LIPA_NA_MPESA_KEY = "bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919"
+LIPA_NA_MPESA_KEY = (
+    "bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919"
+)
 SEC_CREDENTIAL = (
     "fqW2kW0hNOoeSbh+sd0qrSfFwAHJcxy1VlCqPGuu2MtRYPITI35CQApGPg"
     "2mE8d9SMmvXSB/hTeyV6apg3sJyqSfe4HK0p1UelW1wVpER2yctyI+"
@@ -49,7 +51,9 @@ if __name__ == "__main__":
 
     print("--- MPESA c2b running ---")
     c2b = loop.run_until_complete(
-        mpesa.c2b(amount=100, shortcode=SHORT_CODE_1, phone_number="0705867162")
+        mpesa.c2b(
+            amount=100, shortcode=SHORT_CODE_1, phone_number="0705867162"
+        )
     )
     print(c2b)
     print("--- MPESA c2b done running---")
