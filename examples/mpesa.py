@@ -6,6 +6,10 @@ CONSUMER_KEY = "nF4OwB2XiuYZwmdMz3bovnzw2qMls1b7"
 CONSUMER_SECRET = "biIImmaAX9dYD4Pw"
 SHORT_CODE_1 = "601376"
 SHORT_CODE_2 = "600000"
+LIPA_NA_MPESA = "174379"
+LIPA_NA_MPESA_KEY = (
+    "bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919"
+)
 SEC_CREDENTIAL = (
     "fqW2kW0hNOoeSbh+sd0qrSfFwAHJcxy1VlCqPGuu2MtRYPITI35CQApGPg"
     "2mE8d9SMmvXSB/hTeyV6apg3sJyqSfe4HK0p1UelW1wVpER2yctyI+"
@@ -93,3 +97,18 @@ if __name__ == "__main__":
     )
     print(b2b)
     print("--- MPESA b2b done running ---")
+
+    print("--- MPESA b2b running ---")
+    stk = loop.run_until_complete(
+        mpesa.stk_push(
+            lipa_na_mpesa_shortcode=LIPA_NA_MPESA,
+            lipa_na_mpesa_passkey=LIPA_NA_MPESA_KEY,
+            amount=100,
+            party_a="0705867162",
+            party_b=LIPA_NA_MPESA,
+            transaction_desc=f"Deposit from {party_b}",
+            callback_url="https://www.aio.co.ke/queue/",
+        )
+    )
+    print(stk)
+    print("--- MPESA stk done running ---")

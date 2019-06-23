@@ -1,4 +1,6 @@
 import logging
+from datetime import datetime
+import base64
 from base64 import b64encode
 from pathlib import Path
 
@@ -18,6 +20,7 @@ class Mpesa:
     C2B_URL_PATH = "/mpesa/c2b/v1/simulate"
     B2C_URL_PATH = "/mpesa/b2c/v1/paymentrequest"
     B2B_URL_PATH = "/mpesa/b2b/v1/paymentrequest"
+    STK_URL_PATH = "/mpesa/stkpush/v1/processrequest"
 
     def __init__(
         self,
@@ -211,6 +214,7 @@ class Mpesa:
         queue_timeout_url: str = None,
         result_url: str = None,
     ) -> dict:
+        """Make a payment from one organization to another."""
         url = f"{self.base_url}{self.B2B_URL_PATH}"
         if command_id not in [
             "BusinessPayBill",
@@ -235,6 +239,54 @@ class Mpesa:
             "Remarks": remarks,
             "QueueTimeOutURL": queue_timeout_url,
             "ResultURL": result_url,
+        }
+        headers = await self.get_headers()
+
+        async with aiohttp.ClientSession(headers=headers) as session:
+            return await self.post(session=session, url=url, data=data)
+
+    @staticmethod
+    def generate_password(short_code, lipa_na_mpesa_passkey) -> str:
+        """Generate a Base64-encoded value of the concatenation of
+        the Shortcode + LNM Passkey + Timestamp"""
+        now = datetime.now()
+        timestamp = now.strftime("%Y%m%d%H%M%S")
+        password = f"{short_code}{lipa_na_mpesa_passkey}{timestamp}"
+        password = base64.b64encode(password.encode()).decode()
+        return password, timestamp
+
+    async def stk_push(
+        self,
+        lipa_na_mpesa_shortcode: str = None,
+        lipa_na_mpesa_passkey: str = None,
+        amount: int = None,
+        party_a: str = None,
+        party_b: str = None,
+        callback_url: str = None,
+        transaction_desc: str = None,
+        transaction_type: str = "CustomerPayBillOnline",
+    ) -> dict:
+        """Make and STK push."""
+        url = f"{self.base_url}{self.STK_URL_PATH}"
+        number, valid = saf_number_fmt(party_a)
+        if not valid:
+            raise ValueError(f"{party_a} is not a valid Safaricom number")
+
+        password, timestamp = Mpesa.generate_password(
+            lipa_na_mpesa_shortcode, lipa_na_mpesa_passkey
+        )
+        data = {
+            "BusinessShortCode": lipa_na_mpesa_shortcode,
+            "Password": password,
+            "Timestamp": timestamp,
+            "TransactionType": transaction_type,
+            "Amount": f"{amount}",
+            "PartyA": number,
+            "PartyB": lipa_na_mpesa_shortcode,
+            "PhoneNumber": number,
+            "CallBackURL": callback_url,
+            "AccountReference": number,
+            "TransactionDesc": transaction_desc,
         }
         headers = await self.get_headers()
 
