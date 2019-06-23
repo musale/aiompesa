@@ -8,3 +8,7 @@ upload:
 	@python setup.py sdist
 	@python setup.py bdist_wheel
 	@twine upload dist/*
+
+.PHONY: tests
+tests:
+	@pipenv run pytest --verbose
