@@ -6,4 +6,4 @@ introduction
 .. toctree::
     :maxdepth: 1
 
-    introduction
+    contents
