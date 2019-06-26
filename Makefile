@@ -15,4 +15,4 @@ tests:
 
 .PHONY: build
 build:
-	@pipenv run sphinx-build -a -E documentation docs/
+	@pipenv run sphinx-build -a -E docs/source docs/build
