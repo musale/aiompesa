@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.com/musale/aiompesa.svg?branch=master)](https://travis-ci.com/musale/aiompesa)
+
 # aiompesa
 
 A package for accessing the [MPESA Daraja API](https://developers.safaricom.co.ke>) from [asyncio](https://docs.python.org/3/library/asyncio.html>).
