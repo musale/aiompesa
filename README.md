@@ -1,4 +1,6 @@
 [![Build Status](https://travis-ci.com/musale/aiompesa.svg?branch=master)](https://travis-ci.com/musale/aiompesa)
+[![codecov](https://codecov.io/gh/musale/aiompesa/branch/master/graph/badge.svg)](https://codecov.io/gh/musale/aiompesa)
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/419935c5f2a043028908ed2793f0161c)](https://www.codacy.com/app/musale/aiompesa?utm_source=github.com&utm_medium=referral&utm_content=musale/aiompesa&utm_campaign=Badge_Grade)
 
 # aiompesa
 
