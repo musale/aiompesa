@@ -8,7 +8,11 @@ python:
   - "3.6"
 
 install:
+  - pip install codecov
   - pip install pipenv && pipenv install --system --deploy --dev
 
 script:
   - make tests
+
+after_success:
+  - codecov
