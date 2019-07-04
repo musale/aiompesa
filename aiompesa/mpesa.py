@@ -88,10 +88,15 @@ class Mpesa:
                 response_txt = await response.text()
                 if response_txt:
                     return response_txt
-                return {"error": "Wrong credentials", "status": response.status}
+                return {
+                    "error": "Wrong credentials",
+                    "status": response.status,
+                }
 
     @staticmethod
-    async def post(session: aiohttp.ClientSession, url: str, data: dict) -> dict:
+    async def post(
+        session: aiohttp.ClientSession, url: str, data: dict
+    ) -> dict:
         """Performs an async POST request to the URL provided.
 
         Args:
@@ -196,7 +201,10 @@ class Mpesa:
         Raises:
             ValueError: when the `access_token` is invalid.
         """
-        headers = {"Host": f"{self.base_url[8:]}", "Content-Type": "application/json"}
+        headers = {
+            "Host": f"{self.base_url[8:]}",
+            "Content-Type": "application/json",
+        }
         token = await self.generate_token()
         access_token = token.get("access_token", None)
         if access_token is None:
@@ -242,7 +250,9 @@ class Mpesa:
                 validation_url and confirmation_url are not valid URLs.
         """
         if response_type not in ["Cancelled", "Completed"]:
-            raise ValueError(f"{response_type} is not a valid ResponseType value")
+            raise ValueError(
+                f"{response_type} is not a valid ResponseType value"
+            )
         if not is_url(confirmation_url):
             raise ValueError(f"{confirmation_url} is not a valid url value")
         if not is_url(validation_url):
@@ -261,7 +271,10 @@ class Mpesa:
             return await self.post(session=session, url=url, data=data)
 
     async def c2b(
-        self, shortcode: str = None, amount: int = None, phone_number: str = None
+        self,
+        shortcode: str = None,
+        amount: int = None,
+        phone_number: str = None,
     ) -> dict:
         """Simulate making payments from client to Safaricom API.
 
@@ -358,7 +371,11 @@ class Mpesa:
         phone_number, valid = saf_number_fmt(party_b)
         if not valid:
             raise ValueError(f"{party_b} is not a valid Safaricom number")
-        if command_id not in ["SalaryPayment", "BusinessPayment", "PromotionPayment"]:
+        if command_id not in [
+            "SalaryPayment",
+            "BusinessPayment",
+            "PromotionPayment",
+        ]:
             raise ValueError(f"{command_id} is not a valid CommandID value")
         data = {
             "InitiatorName": initiator_name,
