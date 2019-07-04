@@ -1,4 +1,9 @@
 language: python
+env:
+  global:
+    - PYTHONASYNCIODEBUG='1'
+    - PIPENV_IGNORE_VIRTUALENVS=1
+
 python:
   - "3.5"
   - "3.5-dev"
