@@ -5,10 +5,7 @@ env:
     - PIPENV_IGNORE_VIRTUALENVS=1
 
 python:
-  - "3.5"
-  - "3.5-dev"
   - "3.6"
-  - "3.6-dev"
 
 install:
   - pip install pipenv && pipenv install --system --deploy --dev
