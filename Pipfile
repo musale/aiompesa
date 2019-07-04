@@ -10,6 +10,7 @@ pytest = "*"
 "flake8" = "*"
 bandit = "*"
 sphinx = "*"
+"doc8" = "*"
 
 [packages]
 aiohttp = "*"
