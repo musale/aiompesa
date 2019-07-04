@@ -62,7 +62,8 @@ class Mpesa:
             consumer_key: key required to make a request to the API.
             consumer_secret: secret required to make a request to the API.
         """
-        if sandbox:
+        self.sandbox = sandbox
+        if self.sandbox:
             self.base_url = self.SANDBOX_BASE_URL
         else:
             self.base_url = self.PRODUCTION_BASE_URL

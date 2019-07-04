@@ -11,6 +11,7 @@ pytest = "*"
 bandit = "*"
 sphinx = "*"
 "doc8" = "*"
+pytest-cov = "*"
 
 [packages]
 aiohttp = "*"

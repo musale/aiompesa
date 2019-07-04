@@ -15,7 +15,7 @@ upload:
 
 .PHONY: tests
 tests:
-	@pipenv run pytest --verbose
+	@pipenv run pytest --verbose --cov=aiompesa --cov-report html
 
 .PHONY: docs
 docs:

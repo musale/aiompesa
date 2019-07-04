@@ -1,8 +1,17 @@
 import random
+import pytest
 
 from aiompesa import utils
 
 random.seed(999999)
+
+
+def test_raises_value_error():
+    """Test raising the Exception."""
+    with pytest.raises(Exception):
+        res = utils.is_url(123)
+        assert res
+    assert res is False
 
 
 def test_isurl():
@@ -27,6 +36,12 @@ def test_isurl_false() -> None:
     for url in invalid_urls:
         valid = utils.is_url(url)
         assert valid is False
+
+
+def test_invalid_saf_numbers() -> None:
+    """Test invalid Safaricom numbers."""
+    _, valid = utils.saf_number_fmt("0731100100")
+    assert valid is False
 
 
 def test_valid_saf_numbers() -> None:
