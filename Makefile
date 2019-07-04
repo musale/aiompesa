@@ -13,6 +13,7 @@ upload:
 tests:
 	@pipenv run pytest --verbose
 
-.PHONY: build
-build:
+.PHONY: docs
+docs:
+	@rm -rf docs/build
 	@pipenv run sphinx-build -a -E docs/source docs/build
