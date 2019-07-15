@@ -35,7 +35,9 @@ class TestMpesa(TestCase):
             consumer_key=CONSUMER_KEY, consumer_secret=CONSUMER_SECRET
         )
         self.prod_mpesa = aiompesa.Mpesa(
-            sandbox=False, consumer_key=CONSUMER_KEY, consumer_secret=CONSUMER_SECRET
+            sandbox=False,
+            consumer_key=CONSUMER_KEY,
+            consumer_secret=CONSUMER_SECRET,
         )
         self.fake_mpesa = aiompesa.Mpesa(False, "fake_key", "fake_secret")
 
@@ -90,7 +92,10 @@ class TestMpesa(TestCase):
         with pytest.raises(ValueError):
             assert self._run(
                 self.mpesa.register_url(
-                    "Completed", "123123", "https://good.com/callback", "fake_url"
+                    "Completed",
+                    "123123",
+                    "https://good.com/callback",
+                    "fake_url",
                 )
             )
         self.mpesa.register_url = AsyncMock(return_value={"success": True})
@@ -104,3 +109,153 @@ class TestMpesa(TestCase):
         )
         self.assertDictEqual(response, {"success": True})
 
+    def test_post_success_json(self):
+        url = "https://google.com/"
+        session = AsyncMock(return_value=mock.Mock())
+        self.mpesa.post = AsyncMock(return_value={"success": True})
+        self._run(self.mpesa.post(session, url, data={"data": True}))
+        self.mpesa.post.mock.assert_called_once_with(
+            session, url, data={"data": True}
+        )
+
+    def test_post_success_text(self):
+        url = "https://google.com/"
+        session = AsyncMock(return_value=mock.Mock())
+        self.mpesa.post = AsyncMock(return_value="success")
+        self._run(self.mpesa.post(session, url, data={"data": True}))
+        self.mpesa.post.mock.assert_called_once_with(
+            session, url, data={"data": True}
+        )
+
+    def test_c2b_invalid_phone(self):
+        with pytest.raises(ValueError):
+            assert self._run(self.mpesa.c2b("123123", 100, "0731100100"))
+
+    def test_c2b_valid(self):
+        self.mpesa.c2b = AsyncMock(return_value={"success": True})
+        response = self._run(self.mpesa.c2b("123123", 100, "0721100100"))
+        self.assertDictEqual(response, {"success": True})
+
+    def test_b2c_invalid(self):
+        with pytest.raises(ValueError):
+            assert self._run(
+                self.mpesa.b2c(
+                    initiator_name="tester",
+                    security_credential="xxx",
+                    command_id="Wrong",
+                    amount=100,
+                    party_a="123123",
+                    party_b="0731123123",
+                    remarks="test",
+                    queue_timeout_url="https://test.mpesa/",
+                    result_url="https://tested.mpesa",
+                )
+            )
+        with pytest.raises(ValueError):
+            assert self._run(
+                self.mpesa.b2c(
+                    initiator_name="tester",
+                    security_credential="xxx",
+                    command_id="Wrong",
+                    amount=100,
+                    party_a="123123",
+                    party_b="0721123123",
+                    remarks="test",
+                    queue_timeout_url="https://test.mpesa/",
+                    result_url="https://tested.mpesa",
+                )
+            )
+
+    def test_b2c_valid(self):
+        self.mpesa.b2c = AsyncMock(return_value={"success": True})
+        response = self._run(
+            self.mpesa.b2c(
+                initiator_name="tester",
+                security_credential="xxx",
+                command_id="SalaryPayment",
+                amount=100,
+                party_a="123123",
+                party_b="0721123123",
+                remarks="test",
+                queue_timeout_url="https://test.mpesa/",
+                result_url="https://tested.mpesa",
+            )
+        )
+        self.assertDictEqual(response, {"success": True})
+
+    def test_b2b_invalid(self):
+        with pytest.raises(ValueError):
+            assert self._run(
+                self.mpesa.b2b(
+                    initiator_name="tester",
+                    security_credential="xxx",
+                    command_id="Wrong",
+                    amount=100,
+                    party_a="123123",
+                    party_b="0731123123",
+                    remarks="test",
+                    queue_timeout_url="https://test.mpesa/",
+                    result_url="https://tested.mpesa",
+                )
+            )
+        with pytest.raises(ValueError):
+            assert self._run(
+                self.mpesa.b2c(
+                    initiator_name="tester",
+                    security_credential="xxx",
+                    command_id="Wrong",
+                    amount=100,
+                    party_a="123123",
+                    party_b="0721123123",
+                    remarks="test",
+                    queue_timeout_url="https://test.mpesa/",
+                    result_url="https://tested.mpesa",
+                )
+            )
+
+    def test_b2b_valid(self):
+        self.mpesa.b2b = AsyncMock(return_value={"success": True})
+        response = self._run(
+            self.mpesa.b2b(
+                initiator_name="tester",
+                security_credential="xxx",
+                command_id="SalaryPayment",
+                amount=100,
+                party_a="123123",
+                party_b="0721123123",
+                remarks="test",
+                queue_timeout_url="https://test.mpesa/",
+                result_url="https://tested.mpesa",
+            )
+        )
+        self.assertDictEqual(response, {"success": True})
+
+    def test_stk_push_invalid(self):
+        with pytest.raises(ValueError):
+            assert self._run(
+                self.mpesa.stk_push(
+                    lipa_na_mpesa_shortcode="123123",
+                    lipa_na_mpesa_passkey="xxx",
+                    amount=100,
+                    party_a="123123",
+                    party_b="0731123123",
+                    callback_url="https://results.back/",
+                    transaction_desc="test",
+                    transaction_type="Wrong",
+                )
+            )
+
+    def test_stk_push_valid(self):
+        self.mpesa.stk_push = AsyncMock(return_value={"success": True})
+        response = self._run(
+            self.mpesa.stk_push(
+                lipa_na_mpesa_shortcode="123123",
+                lipa_na_mpesa_passkey="xxx",
+                amount=100,
+                party_a="123123",
+                party_b="0721123123",
+                callback_url="https://results.back/",
+                transaction_desc="test",
+            )
+        )
+        self.assertDictEqual(response, {"success": True})

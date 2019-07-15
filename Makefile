@@ -15,6 +15,7 @@ upload:
 
 .PHONY: tests
 tests:
+	@rm -rf htmlcov
 	@pipenv run pytest --verbose --cov=aiompesa --cov-report html
 
 .PHONY: docs
