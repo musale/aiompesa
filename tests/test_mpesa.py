@@ -9,6 +9,7 @@ import aiompesa
 
 CONSUMER_KEY = "nF4OwB2XiuYZwmdMz3bovnzw2qMls1b7"
 CONSUMER_SECRET = "biIImmaAX9dYD4Pw"
+SAF_BASE_URL = aiompesa.Mpesa.SANDBOX_BASE_URL
 
 
 def AsyncMock(*args, **kwargs):
@@ -44,22 +45,40 @@ class TestMpesa(TestCase):
             consumer_secret=CONSUMER_SECRET,
         )
         self.fake_mpesa = aiompesa.Mpesa(False, "fake_key", "fake_secret")
+        self.url = "https://example.com/test"
 
     def test_sandbox_setup(self):
         assert self.prod_mpesa.base_url == self.mpesa.PRODUCTION_BASE_URL
         assert self.mpesa.base_url == self.mpesa.SANDBOX_BASE_URL
 
     def test_get(self):
-        url = "https://google.com/"
         session = AsyncMock(return_value=mock.Mock())
         self.mpesa.get = AsyncMock(return_value={"success": True})
-        self._run(self.mpesa.get(session, url))
-        self.mpesa.get.mock.assert_called_once_with(session, url)
+        self._run(self.mpesa.get(session, self.url))
+        self.mpesa.get.mock.assert_called_once_with(session, self.url)
 
     def test_generate_password(self):
         password, timestamp = self.mpesa.generate_password("123234", "xxxyyyy")
         self.assertIsInstance(password, str)
         self.assertIsInstance(timestamp, str)
+
+    def test_generate_token_fails(self):
+        self.mpesa.get = AsyncMock(return_value=dict(error=True))
+        with aioresponses():
+            res = self._run(self.mpesa.generate_token())
+            self.assertDictEqual(
+                res, {"access_token": None, "expires_in": None}
+            )
+
+    def test_generate_token(self):
+        self.mpesa.get = AsyncMock(
+            return_value=dict(access_token="access_token", expires_in="3600")
+        )
+        with aioresponses():
+            res = self._run(self.mpesa.generate_token())
+            self.assertDictEqual(
+                res, {"access_token": "access_token", "expires_in": "3600"}
+            )
 
     @mock.patch(
         "aiompesa.Mpesa.generate_token",
@@ -115,7 +134,7 @@ class TestMpesa(TestCase):
     def test_register_url(self):
         with aioresponses() as mo:
             mo.post(
-                "https://sandbox.safaricom.co.ke/mpesa/c2b/v1/registerurl",
+                f"{SAF_BASE_URL}/mpesa/c2b/v1/registerurl",
                 payload={"success": True},
             )
 
@@ -149,7 +168,7 @@ class TestMpesa(TestCase):
     def test_c2b(self):
         with aioresponses() as mo:
             mo.post(
-                "https://sandbox.safaricom.co.ke/mpesa/c2b/v1/simulate",
+                f"{SAF_BASE_URL}/mpesa/c2b/v1/simulate",
                 payload={"success": True},
             )
 
@@ -195,7 +214,7 @@ class TestMpesa(TestCase):
     def test_b2c(self):
         with aioresponses() as mo:
             mo.post(
-                "https://sandbox.safaricom.co.ke/mpesa/b2c/v1/paymentrequest",
+                f"{SAF_BASE_URL}/mpesa/b2c/v1/paymentrequest",
                 payload={"success": True},
             )
 
@@ -253,7 +272,7 @@ class TestMpesa(TestCase):
     def test_b2b(self):
         with aioresponses() as mo:
             mo.post(
-                "https://sandbox.safaricom.co.ke/mpesa/b2b/v1/paymentrequest",
+                f"{SAF_BASE_URL}/mpesa/b2b/v1/paymentrequest",
                 payload={"success": True},
             )
             response = self._run(
@@ -296,7 +315,7 @@ class TestMpesa(TestCase):
     def test_stk_push_valid(self):
         with aioresponses() as mo:
             mo.post(
-                "https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest",
+                f"{SAF_BASE_URL}/mpesa/stkpush/v1/processrequest",
                 payload={"success": True},
             )
 
@@ -320,7 +339,7 @@ class TestMpesa(TestCase):
     def test_reversal(self):
         with aioresponses() as mo:
             mo.post(
-                "https://sandbox.safaricom.co.ke/mpesa/reversal/v1/request",
+                f"{SAF_BASE_URL}/mpesa/reversal/v1/request",
                 payload={"success": True},
             )
             response = self._run(
