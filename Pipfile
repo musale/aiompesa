@@ -17,6 +17,8 @@ pytest-cov = "*"
 aiohttp = "*"
 aiompesa = {path = ".", editable = true}
 "m2crypto" = "*"
+asynctest = "*"
+aioresponses = "*"
 
 [requires]
 python_version = "3.6"

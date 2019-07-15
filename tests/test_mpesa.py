@@ -1,7 +1,11 @@
-import aiompesa
 import asyncio
+from unittest import mock
+
 import pytest
-from unittest import TestCase, mock
+from aioresponses import aioresponses
+from asynctest import TestCase
+
+import aiompesa
 
 CONSUMER_KEY = "nF4OwB2XiuYZwmdMz3bovnzw2qMls1b7"
 CONSUMER_SECRET = "biIImmaAX9dYD4Pw"
@@ -23,8 +27,8 @@ def AsyncMock(*args, **kwargs):
 class TestMpesa(TestCase):
     @staticmethod
     def _run(coro):
-        """
-        helper function that runs any coroutine in an event loop and passes its return value back to the caller.
+        """Helper function that runs any coroutine in an event loop and passes
+        its return value back to the caller.
         https://blog.miguelgrinberg.com/post/unit-testing-asyncio-code
         """
         loop = asyncio.get_event_loop()
@@ -45,17 +49,10 @@ class TestMpesa(TestCase):
         assert self.prod_mpesa.base_url == self.mpesa.PRODUCTION_BASE_URL
         assert self.mpesa.base_url == self.mpesa.SANDBOX_BASE_URL
 
-    def test_get_success_json(self):
+    def test_get(self):
         url = "https://google.com/"
         session = AsyncMock(return_value=mock.Mock())
         self.mpesa.get = AsyncMock(return_value={"success": True})
-        self._run(self.mpesa.get(session, url))
-        self.mpesa.get.mock.assert_called_once_with(session, url)
-
-    def test_get_success_text(self):
-        url = "https://google.com/"
-        session = AsyncMock(return_value=mock.Mock())
-        self.mpesa.get = AsyncMock(return_value="success")
         self._run(self.mpesa.get(session, url))
         self.mpesa.get.mock.assert_called_once_with(session, url)
 
@@ -64,10 +61,18 @@ class TestMpesa(TestCase):
         self.assertIsInstance(password, str)
         self.assertIsInstance(timestamp, str)
 
+    @mock.patch(
+        "aiompesa.Mpesa.generate_token",
+        AsyncMock(return_value={"access_token": "access_token"}),
+    )
     def test_get_headers(self):
         headers = self._run(self.mpesa._get_headers())
         self.assertIsInstance(headers, dict)
 
+    @mock.patch(
+        "aiompesa.Mpesa.generate_token",
+        AsyncMock(return_value={"access_token": None}),
+    )
     def test_get_headers_fails(self):
         with pytest.raises(ValueError):
             assert self._run(self.fake_mpesa._get_headers())
@@ -82,13 +87,17 @@ class TestMpesa(TestCase):
         with pytest.raises(FileNotFoundError):
             assert self.mpesa.generate_security_credential("fake/", "faketoo")
 
-    def test_register_url(self):
+    def test_register_url_wrong_command_id(self):
         with pytest.raises(ValueError):
             assert self._run(self.mpesa.register_url("fake_type", "", "", ""))
+
+    def test_register_url_wrong_callback_url(self):
         with pytest.raises(ValueError):
             assert self._run(
                 self.mpesa.register_url("Completed", "123123", "fake_url", "")
             )
+
+    def test_register_url_wrong_results_url(self):
         with pytest.raises(ValueError):
             assert self._run(
                 self.mpesa.register_url(
@@ -98,30 +107,32 @@ class TestMpesa(TestCase):
                     "fake_url",
                 )
             )
-        self.mpesa.register_url = AsyncMock(return_value={"success": True})
-        response = self._run(
-            self.mpesa.register_url(
-                "Completed",
-                "123123",
-                "https://good.com/callback",
-                "https://good.com/callback",
-            )
-        )
-        self.assertDictEqual(response, {"success": True})
 
-    def test_post_success_json(self):
-        url = "https://google.com/"
+    @mock.patch(
+        "aiompesa.Mpesa._get_headers",
+        AsyncMock(return_value={"Content-Type": "application/json"}),
+    )
+    def test_register_url(self):
+        with aioresponses() as mo:
+            mo.post(
+                "https://sandbox.safaricom.co.ke/mpesa/c2b/v1/registerurl",
+                payload={"success": True},
+            )
+
+            response = self._run(
+                self.mpesa.register_url(
+                    "Completed",
+                    "123123",
+                    "https://good.com/callback",
+                    "https://good.com/callback",
+                )
+            )
+            self.assertDictEqual(response, {"success": True})
+
+    def test_post(self):
+        url = "https://example.com/"
         session = AsyncMock(return_value=mock.Mock())
         self.mpesa.post = AsyncMock(return_value={"success": True})
-        self._run(self.mpesa.post(session, url, data={"data": True}))
-        self.mpesa.post.mock.assert_called_once_with(
-            session, url, data={"data": True}
-        )
-
-    def test_post_success_text(self):
-        url = "https://google.com/"
-        session = AsyncMock(return_value=mock.Mock())
-        self.mpesa.post = AsyncMock(return_value="success")
         self._run(self.mpesa.post(session, url, data={"data": True}))
         self.mpesa.post.mock.assert_called_once_with(
             session, url, data={"data": True}
@@ -131,12 +142,21 @@ class TestMpesa(TestCase):
         with pytest.raises(ValueError):
             assert self._run(self.mpesa.c2b("123123", 100, "0731100100"))
 
-    def test_c2b_valid(self):
-        self.mpesa.c2b = AsyncMock(return_value={"success": True})
-        response = self._run(self.mpesa.c2b("123123", 100, "0721100100"))
-        self.assertDictEqual(response, {"success": True})
+    @mock.patch(
+        "aiompesa.Mpesa._get_headers",
+        AsyncMock(return_value={"Content-Type": "application/json"}),
+    )
+    def test_c2b(self):
+        with aioresponses() as mo:
+            mo.post(
+                "https://sandbox.safaricom.co.ke/mpesa/c2b/v1/simulate",
+                payload={"success": True},
+            )
 
-    def test_b2c_invalid(self):
+            response = self._run(self.mpesa.c2b("123123", 100, "0721100100"))
+            self.assertDictEqual(response, {"success": True})
+
+    def test_b2c_invalid_party_b(self):
         with pytest.raises(ValueError):
             assert self._run(
                 self.mpesa.b2c(
@@ -151,6 +171,8 @@ class TestMpesa(TestCase):
                     result_url="https://tested.mpesa",
                 )
             )
+
+    def test_b2c_invalid_command_id(self):
         with pytest.raises(ValueError):
             assert self._run(
                 self.mpesa.b2c(
@@ -166,24 +188,33 @@ class TestMpesa(TestCase):
                 )
             )
 
-    def test_b2c_valid(self):
-        self.mpesa.b2c = AsyncMock(return_value={"success": True})
-        response = self._run(
-            self.mpesa.b2c(
-                initiator_name="tester",
-                security_credential="xxx",
-                command_id="SalaryPayment",
-                amount=100,
-                party_a="123123",
-                party_b="0721123123",
-                remarks="test",
-                queue_timeout_url="https://test.mpesa/",
-                result_url="https://tested.mpesa",
+    @mock.patch(
+        "aiompesa.Mpesa._get_headers",
+        AsyncMock(return_value={"Content-Type": "application/json"}),
+    )
+    def test_b2c(self):
+        with aioresponses() as mo:
+            mo.post(
+                "https://sandbox.safaricom.co.ke/mpesa/b2c/v1/paymentrequest",
+                payload={"success": True},
             )
-        )
-        self.assertDictEqual(response, {"success": True})
 
-    def test_b2b_invalid(self):
+            response = self._run(
+                self.mpesa.b2c(
+                    initiator_name="tester",
+                    security_credential="xxx",
+                    command_id="SalaryPayment",
+                    amount=100,
+                    party_a="123123",
+                    party_b="0721123123",
+                    remarks="test",
+                    queue_timeout_url="https://test.mpesa/",
+                    result_url="https://tested.mpesa",
+                )
+            )
+            self.assertDictEqual(response, {"success": True})
+
+    def test_b2b_invalid_party_b(self):
         with pytest.raises(ValueError):
             assert self._run(
                 self.mpesa.b2b(
@@ -198,6 +229,8 @@ class TestMpesa(TestCase):
                     result_url="https://tested.mpesa",
                 )
             )
+
+    def test_b2b_invalid_command_id(self):
         with pytest.raises(ValueError):
             assert self._run(
                 self.mpesa.b2c(
@@ -213,24 +246,32 @@ class TestMpesa(TestCase):
                 )
             )
 
-    def test_b2b_valid(self):
-        self.mpesa.b2b = AsyncMock(return_value={"success": True})
-        response = self._run(
-            self.mpesa.b2b(
-                initiator_name="tester",
-                security_credential="xxx",
-                command_id="SalaryPayment",
-                amount=100,
-                party_a="123123",
-                party_b="0721123123",
-                remarks="test",
-                queue_timeout_url="https://test.mpesa/",
-                result_url="https://tested.mpesa",
+    @mock.patch(
+        "aiompesa.Mpesa._get_headers",
+        AsyncMock(return_value={"Content-Type": "application/json"}),
+    )
+    def test_b2b(self):
+        with aioresponses() as mo:
+            mo.post(
+                "https://sandbox.safaricom.co.ke/mpesa/b2b/v1/paymentrequest",
+                payload={"success": True},
             )
-        )
-        self.assertDictEqual(response, {"success": True})
+            response = self._run(
+                self.mpesa.b2b(
+                    initiator_name="tester",
+                    security_credential="xxx",
+                    command_id="BusinessBuyGoods",
+                    amount=100,
+                    party_a="123123",
+                    party_b="0721123123",
+                    remarks="test",
+                    queue_timeout_url="https://test.mpesa/",
+                    result_url="https://tested.mpesa",
+                )
+            )
+            self.assertDictEqual(response, {"success": True})
 
-    def test_stk_push_invalid(self):
+    def test_stk_push_invalid_party_b(self):
         with pytest.raises(ValueError):
             assert self._run(
                 self.mpesa.stk_push(
@@ -241,21 +282,58 @@ class TestMpesa(TestCase):
                     party_b="0731123123",
                     callback_url="https://results.back/",
                     transaction_desc="test",
-                    transaction_type="Wrong",
                 )
             )
 
+    @mock.patch(
+        "aiompesa.Mpesa.generate_password",
+        mock.MagicMock(return_value=("axsaxa", "20180901349134")),
+    )
+    @mock.patch(
+        "aiompesa.Mpesa._get_headers",
+        AsyncMock(return_value={"Content-Type": "application/json"}),
+    )
     def test_stk_push_valid(self):
-        self.mpesa.stk_push = AsyncMock(return_value={"success": True})
-        response = self._run(
-            self.mpesa.stk_push(
-                lipa_na_mpesa_shortcode="123123",
-                lipa_na_mpesa_passkey="xxx",
-                amount=100,
-                party_a="123123",
-                party_b="0721123123",
-                callback_url="https://results.back/",
-                transaction_desc="test",
+        with aioresponses() as mo:
+            mo.post(
+                "https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest",
+                payload={"success": True},
             )
-        )
-        self.assertDictEqual(response, {"success": True})
+
+            response = self._run(
+                self.mpesa.stk_push(
+                    lipa_na_mpesa_shortcode="123123",
+                    lipa_na_mpesa_passkey="xxx",
+                    amount=100,
+                    party_a="0721123123",
+                    party_b="123123",
+                    callback_url="https://results.back/",
+                    transaction_desc="test",
+                )
+            )
+            self.assertDictEqual(response, {"success": True})
+
+    @mock.patch(
+        "aiompesa.Mpesa._get_headers",
+        AsyncMock(return_value={"Content-Type": "application/json"}),
+    )
+    def test_reversal(self):
+        with aioresponses() as mo:
+            mo.post(
+                "https://sandbox.safaricom.co.ke/mpesa/reversal/v1/request",
+                payload={"success": True},
+            )
+            response = self._run(
+                self.mpesa.reversal(
+                    initiator="tester",
+                    security_credential="xxx",
+                    transaction_id="AERW90348NFSD",
+                    amount=100,
+                    receiver_party="0721123123",
+                    occasion="0721123123",
+                    remarks="test",
+                    queue_timeout_url="https://test.mpesa/",
+                    result_url="https://tested.mpesa",
+                )
+            )
+            self.assertDictEqual(response, {"success": True})

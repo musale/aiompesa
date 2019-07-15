@@ -86,13 +86,7 @@ class Mpesa:
                 return await response.json()
             except Exception as e:
                 logger.debug(e)
-                response_txt = await response.text()
-                if response_txt:
-                    return response_txt
-                return {
-                    "error": "Wrong credentials",
-                    "status": response.status,
-                }
+                return {"error": f"{e}", "status": response.status}
 
     @staticmethod
     async def post(
@@ -113,9 +107,6 @@ class Mpesa:
                 return await response.json()
             except Exception as e:
                 logger.debug(e)
-                response_txt = await response.text()
-                if response_txt:
-                    return response_txt
                 return {"error": f"{e}", "status": response.status}
 
     @staticmethod
