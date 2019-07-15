@@ -2,8 +2,9 @@ import asyncio
 from unittest import mock
 
 import pytest
+import aiohttp
 from aioresponses import aioresponses
-from asynctest import TestCase
+from asynctest import TestCase, patch, CoroutineMock
 
 import aiompesa
 
@@ -56,6 +57,21 @@ class TestMpesa(TestCase):
         self.mpesa.get = AsyncMock(return_value={"success": True})
         self._run(self.mpesa.get(session, self.url))
         self.mpesa.get.mock.assert_called_once_with(session, self.url)
+
+    @patch("aiohttp.ClientSession.get")
+    async def test_get_returns_error_dict_after_json_serialize_fails(
+        self, req
+    ):
+        session = aiohttp.ClientSession()
+        req.return_value.__aenter__.return_value.json = CoroutineMock(
+            side_effect=Exception("Error serializing text to json")
+        )
+        req.return_value.__aenter__.return_value.status = 200
+        res = await self.mpesa.get(session, self.url)
+        assert req.call_count == 1
+        self.assertDictEqual(
+            res, {"error": "Error serializing text to json", "status": 200}
+        )
 
     def test_generate_password(self):
         password, timestamp = self.mpesa.generate_password("123234", "xxxyyyy")
