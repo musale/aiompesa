@@ -49,8 +49,10 @@ class TestMpesa(TestCase):
         self.url = "https://example.com/test"
 
     def test_sandbox_setup(self):
-        assert self.prod_mpesa.base_url == self.mpesa.PRODUCTION_BASE_URL
-        assert self.mpesa.base_url == self.mpesa.SANDBOX_BASE_URL
+        self.assertEqual(
+            self.prod_mpesa.base_url, self.mpesa.PRODUCTION_BASE_URL
+        )
+        self.assertEqual(self.mpesa.base_url, self.mpesa.SANDBOX_BASE_URL)
 
     def test_get(self):
         session = AsyncMock(return_value=mock.Mock())
@@ -68,7 +70,7 @@ class TestMpesa(TestCase):
         )
         req.return_value.__aenter__.return_value.status = 200
         res = await self.mpesa.get(session, self.url)
-        assert req.call_count == 1
+        self.assertEqual(req.call_count, 1)
         self.assertDictEqual(
             res, {"error": "Error serializing text to json", "status": 200}
         )
@@ -124,17 +126,17 @@ class TestMpesa(TestCase):
 
     def test_register_url_wrong_command_id(self):
         with pytest.raises(ValueError):
-            assert self._run(self.mpesa.register_url("fake_type", "", "", ""))
+            self._run(self.mpesa.register_url("fake_type", "", "", ""))
 
     def test_register_url_wrong_callback_url(self):
         with pytest.raises(ValueError):
-            assert self._run(
+            self._run(
                 self.mpesa.register_url("Completed", "123123", "fake_url", "")
             )
 
     def test_register_url_wrong_results_url(self):
         with pytest.raises(ValueError):
-            assert self._run(
+            self._run(
                 self.mpesa.register_url(
                     "Completed",
                     "123123",
@@ -175,7 +177,7 @@ class TestMpesa(TestCase):
 
     def test_c2b_invalid_phone(self):
         with pytest.raises(ValueError):
-            assert self._run(self.mpesa.c2b("123123", 100, "0731100100"))
+            self._run(self.mpesa.c2b("123123", 100, "0731100100"))
 
     @mock.patch(
         "aiompesa.Mpesa._get_headers",
@@ -193,7 +195,7 @@ class TestMpesa(TestCase):
 
     def test_b2c_invalid_party_b(self):
         with pytest.raises(ValueError):
-            assert self._run(
+            self._run(
                 self.mpesa.b2c(
                     initiator_name="tester",
                     security_credential="xxx",
@@ -209,7 +211,7 @@ class TestMpesa(TestCase):
 
     def test_b2c_invalid_command_id(self):
         with pytest.raises(ValueError):
-            assert self._run(
+            self._run(
                 self.mpesa.b2c(
                     initiator_name="tester",
                     security_credential="xxx",
@@ -251,7 +253,7 @@ class TestMpesa(TestCase):
 
     def test_b2b_invalid_party_b(self):
         with pytest.raises(ValueError):
-            assert self._run(
+            self._run(
                 self.mpesa.b2b(
                     initiator_name="tester",
                     security_credential="xxx",
@@ -267,7 +269,7 @@ class TestMpesa(TestCase):
 
     def test_b2b_invalid_command_id(self):
         with pytest.raises(ValueError):
-            assert self._run(
+            self._run(
                 self.mpesa.b2c(
                     initiator_name="tester",
                     security_credential="xxx",
@@ -308,7 +310,7 @@ class TestMpesa(TestCase):
 
     def test_stk_push_invalid_party_b(self):
         with pytest.raises(ValueError):
-            assert self._run(
+            self._run(
                 self.mpesa.stk_push(
                     lipa_na_mpesa_shortcode="123123",
                     lipa_na_mpesa_passkey="xxx",
