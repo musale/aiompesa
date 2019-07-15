@@ -112,7 +112,7 @@ class TestMpesa(TestCase):
     )
     def test_get_headers_fails(self):
         with pytest.raises(ValueError):
-            assert self._run(self.fake_mpesa._get_headers())
+            self._run(self.fake_mpesa._get_headers())
 
     def test_generate_security_credential(self):
         cipher = self.mpesa.generate_security_credential(
@@ -122,7 +122,7 @@ class TestMpesa(TestCase):
 
     def test_generate_security_credential_raises(self):
         with pytest.raises(FileNotFoundError):
-            assert self.mpesa.generate_security_credential("fake/", "faketoo")
+            self.mpesa.generate_security_credential("fake/", "faketoo")
 
     def test_register_url_wrong_command_id(self):
         with pytest.raises(ValueError):
@@ -167,12 +167,11 @@ class TestMpesa(TestCase):
             self.assertDictEqual(response, {"success": True})
 
     def test_post(self):
-        url = "https://example.com/"
         session = AsyncMock(return_value=mock.Mock())
         self.mpesa.post = AsyncMock(return_value={"success": True})
-        self._run(self.mpesa.post(session, url, data={"data": True}))
+        self._run(self.mpesa.post(session, self.url, data={"data": True}))
         self.mpesa.post.mock.assert_called_once_with(
-            session, url, data={"data": True}
+            session, self.url, data={"data": True}
         )
 
     @patch("aiohttp.ClientSession.post")
