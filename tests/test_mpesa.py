@@ -175,6 +175,21 @@ class TestMpesa(TestCase):
             session, url, data={"data": True}
         )
 
+    @patch("aiohttp.ClientSession.post")
+    async def test_post_returns_error_dict_after_json_serialize_fails(
+        self, req
+    ):
+        session = aiohttp.ClientSession()
+        req.return_value.__aenter__.return_value.json = CoroutineMock(
+            side_effect=Exception("Error serializing text to json")
+        )
+        req.return_value.__aenter__.return_value.status = 200
+        res = await self.mpesa.post(session, self.url, data={"data": True})
+        self.assertEqual(req.call_count, 1)
+        self.assertDictEqual(
+            res, {"error": "Error serializing text to json", "status": 200}
+        )
+
     def test_c2b_invalid_phone(self):
         with pytest.raises(ValueError):
             self._run(self.mpesa.c2b("123123", 100, "0731100100"))
